@@ -3,89 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Navigacija</title>
+<title>DONAC</title>
 
 <link rel="stylesheet"
  href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<link rel="stylesheet"
- href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 
 <style>
-html,body{margin:0;height:100%;background:black;}
-#map{height:100vh;width:100vw;}
-
-/* rotacija mape */
-.leaflet-map-pane{
-  transition: transform 0.3s linear;
+html,body{
+  margin:0;
+  height:100%;
+  background:black;
+  overflow:hidden;
 }
 
-.navbox{
+#map{
+  height:100vh;
+  width:100vw;
+  transform-origin:center center;
+  transition:transform 0.3s linear;
+}
+
+.center-marker{
   position:fixed;
-  top:10px;
+  top:50%;
   left:50%;
-  transform:translateX(-50%);
+  transform:translate(-50%,-100%);
+  font-size:32px;
   z-index:999;
+  pointer-events:none;
 }
-input{padding:10px;border:none;}
-button{padding:10px;background:#222;color:white;border:none;}
 </style>
 </head>
 <body>
 
-<div class="navbox">
-<input id="dest" placeholder="Unesi destinaciju">
-<button onclick="startNav()">Navigiraj</button>
-</div>
-
 <div id="map"></div>
+<div class="center-marker">📍</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 <script>
-let map=L.map('map',{zoomControl:false}).setView([45,15],6);
+
+let map=L.map('map',{zoomControl:false})
+.setView([0,0],16);
 
 L.tileLayer(
 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 ).addTo(map);
 
-let control;
-let routeCoords=[];
-let userLatLng;
+let lastHeading=0;
 
-// ===== SNAP NA RUTU =====
-function snapToRoute(pos){
-
-if(!routeCoords.length) return pos;
-
-let closest=null;
-let minDist=Infinity;
-
-routeCoords.forEach(p=>{
-  let d=map.distance(pos,[p.lat,p.lng]);
-  if(d<minDist){
-    minDist=d;
-    closest=[p.lat,p.lng];
-  }
-});
-
-return closest || pos;
+// ROTACIJA MAPE
+function rotateMap(deg){
+  lastHeading=deg;
+  document.getElementById("map")
+    .style.transform=`rotate(${-deg}deg)`;
 }
 
-// ===== GPS PRAĆENJE =====
+// GPS PRAĆENJE
 navigator.geolocation.watchPosition(pos=>{
 
-let latlng=[pos.coords.latitude,pos.coords.longitude];
-userLatLng=snapToRoute(latlng);
+let lat=pos.coords.latitude;
+let lng=pos.coords.longitude;
 
-// centriraj mapu
-map.setView(userLatLng,17,{animate:true});
+map.setView([lat,lng],17,{animate:true});
 
-// auto rotate mapa
+// heading iz GPS-a (najbolje kad voziš)
 if(pos.coords.heading!==null){
- let angle=360-pos.coords.heading;
- document.querySelector('.leaflet-map-pane')
- .style.transform=`rotate(${angle}deg)`;
+  rotateMap(pos.coords.heading);
 }
 
 },{
@@ -94,34 +78,25 @@ if(pos.coords.heading!==null){
  timeout:5000
 });
 
-// ===== START NAVIGACIJE =====
-function startNav(){
 
-let dest=document.getElementById("dest").value;
+// FALLBACK KOMPAS (telefon senzori)
+if(window.DeviceOrientationEvent){
 
-fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${dest}`)
-.then(res=>res.json())
-.then(data=>{
-
-let destLatLng=[data[0].lat,data[0].lon];
-
-if(control) map.removeControl(control);
-
-control=L.Routing.control({
- waypoints:[
-  L.latLng(userLatLng),
-  L.latLng(destLatLng)
- ],
- routeWhileDragging:false
-}).addTo(map);
-
-// spremi rutu za snap
-control.on('routesfound', e=>{
- routeCoords=e.routes[0].coordinates;
+window.addEventListener("deviceorientationabsolute",e=>{
+  if(e.alpha!=null){
+    rotateMap(e.alpha);
+  }
 });
 
+window.addEventListener("deviceorientation",e=>{
+  if(e.alpha!=null){
+    rotateMap(e.alpha);
+  }
 });
+
 }
+
 </script>
+
 </body>
 </html>
