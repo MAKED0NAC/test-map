@@ -1,91 +1,76 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="hr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Navigation Bar</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mini Navigacija</title>
 
-        /* Glavna navigaciona traka */
-        .navbar {
-            display: flex;
-            align-items: center;
-            background-color: #ffffff;
-            padding: 10px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
-        /* Ikona ili logo na početku */
-        .logo {
-            width: 30px;
-            height: 30px;
-            margin-right: 10px;
-        }
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: black;
+  }
 
-        /* Tekst ili naziv navigacije */
-        .title {
-            font-weight: bold;
-            font-size: 20px;
-            margin-right: 20px;
-            color: #333;
-        }
+  #map {
+    height: 100vh;
+    width: 100vw;
+  }
 
-        /* Dugmad za navigaciju */
-        .nav-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .nav-button {
-            background-color: #4285F4;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-
-        .nav-button:hover {
-            background-color: #357ae8;
-        }
-
-        /* Responsive dizajn (opcionalno) */
-        @media (max-width: 600px) {
-            .navbar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .nav-buttons {
-                width: 100%;
-                justify-content: space-around;
-                margin-top: 10px;
-            }
-        }
-    </style>
+  /* marker u centru */
+  .center-marker {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -100%);
+    font-size: 32px;
+    pointer-events: none;
+    z-index: 999;
+  }
+</style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <!-- Ikona ili logo -->
-        <img src="https://img.icons8.com/ios-filled/50/000000/map.png" alt="Mapa" class="logo" />
+<div id="map"></div>
+<div class="center-marker">📍</div>
 
-        <!-- Naslov ili naziv -->
-        <div class="title">Navigacija</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map = L.map('map', {
+  zoomControl: false
+}).setView([0,0], 16);
 
-        <!-- Dugmad za funkcije -->
-        <div class="nav-buttons">
-            <button class="nav-button">Start</button>
-            <button class="nav-button">Sledi</button>
-            <button class="nav-button">Povratak</button>
-        </div>
-    </nav>
+// dark tile mapa
+L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  {
+    attribution: '&copy; OpenStreetMap contributors'
+  }
+).addTo(map);
+
+// praćenje lokacije
+if (navigator.geolocation) {
+  navigator.geolocation.watchPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      map.setView([lat, lng]);
+    },
+    err => alert("Uključi GPS / lokaciju."),
+    {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 5000
+    }
+  );
+}
+</script>
 
 </body>
 </html>
