@@ -2,96 +2,84 @@
 <html lang="hr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Mini Navigacija</title>
 
 <link rel="stylesheet"
- href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html,body{
+html, body {
   margin:0;
+  padding:0;
+  width:100%;
   height:100%;
-  background:black;
+  overflow:hidden;
+  background:#000;
 }
-#map{
-  height:100vh;
+
+#map {
   width:100vw;
+  height:100vh;
 }
-.center-marker{
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-100%);
-  font-size:32px;
-  pointer-events:none;
-  z-index:999;
+
+/* uklanja zoom tipke */
+.leaflet-control-zoom {
+  display:none;
 }
 </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div class="center-marker">📍</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+const map = L.map('map', {
+  zoomControl:false,
+  attributionControl:false
+}).setView([0,0], 16);
 
-let map = L.map('map',{zoomControl:false})
-.setView([0,0],17);
-
+// Dark tiles
 L.tileLayer(
-'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 ).addTo(map);
 
-let accuracyCircle;
-let lastLatLng=null;
-
-// jednostavno "smoothing" filtriranje
-function smoothPosition(newLat,newLng){
-  if(!lastLatLng) return [newLat,newLng];
-
-  let alpha=0.25; // manji = stabilnije
-  let lat=lastLatLng[0]*(1-alpha)+newLat*alpha;
-  let lng=lastLatLng[1]*(1-alpha)+newLng*alpha;
-
-  return [lat,lng];
-}
-
-if(navigator.geolocation){
-
-navigator.geolocation.watchPosition(pos=>{
-
-let lat=pos.coords.latitude;
-let lng=pos.coords.longitude;
-let acc=pos.coords.accuracy;
-
-// ignoriraj loša očitanja
-if(acc>40) return;
-
-let smoothed=smoothPosition(lat,lng);
-lastLatLng=smoothed;
-
-// auto zoom prema brzini
-let speed=pos.coords.speed||0;
-let zoom= speed>20 ? 15 : 17;
-
-map.setView(smoothed,zoom,{animate:true});
-
-// krug tačnosti
-if(accuracyCircle) map.removeLayer(accuracyCircle);
-accuracyCircle=L.circle(smoothed,{
-radius:acc
-}).addTo(map);
-
-},{
-enableHighAccuracy:true,
-maximumAge:0,
-timeout:8000
+// Custom marker
+const myIcon = L.icon({
+  iconUrl: "marker.png", // zamijeni svojom slikom
+  iconSize: [40,40],
+  iconAnchor: [20,20]
 });
 
-}
+let marker;
 
+// GPS tracking
+navigator.geolocation.watchPosition(pos => {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+
+  map.setView([lat,lng], 16, {animate:true});
+
+  if(!marker){
+    marker = L.marker([lat,lng], {icon:myIcon}).addTo(map);
+  } else {
+    marker.setLatLng([lat,lng]);
+  }
+
+}, () => alert("Uključi GPS"), {
+  enableHighAccuracy:true,
+  maximumAge:1000,
+  timeout:10000
+});
+
+// pokušaj fullscreen nakon prvog dodira
+document.body.addEventListener("click", () => {
+  if(document.documentElement.requestFullscreen){
+    document.documentElement.requestFullscreen();
+  }
+}, {once:true});
 </script>
+
 </body>
 </html>
