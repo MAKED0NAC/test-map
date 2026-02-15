@@ -19,9 +19,12 @@
 <div id="map"></div>
 
 <script>
-var map = L.map('map').setView([44.8, 20.4], 13);
+var map = L.map('map').setView([44.8, 20.4], 15); // smanjili smo zoom
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+// Koristi stilizovanu mapu koja podseća na GTA
+L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png', {
+  attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+}).addTo(map);
 
 var marker;
 
@@ -30,12 +33,18 @@ navigator.geolocation.watchPosition(pos => {
   const lng = pos.coords.longitude;
 
   if (!marker) {
-    marker = L.marker([lat, lng]).addTo(map);
+    marker = L.marker([lat, lng], {
+      icon: L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/64/64401.png', // ikona za marker
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+      })
+    }).addTo(map);
   } else {
     marker.setLatLng([lat, lng]);
   }
 
-  map.setView([lat, lng], 20);
+  map.setView([lat, lng], 15);
 });
 </script>
 
