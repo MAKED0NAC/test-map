@@ -1,36 +1,31 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DONAC</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mini Navigacija</title>
 
 <link rel="stylesheet"
- href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 html,body{
   margin:0;
   height:100%;
   background:black;
-  overflow:hidden;
 }
-
 #map{
   height:100vh;
   width:100vw;
-  transform-origin:center center;
-  transition:transform 0.3s linear;
 }
-
 .center-marker{
   position:fixed;
   top:50%;
   left:50%;
   transform:translate(-50%,-100%);
   font-size:32px;
-  z-index:999;
   pointer-events:none;
+  z-index:999;
 }
 </style>
 </head>
@@ -39,64 +34,64 @@ html,body{
 <div id="map"></div>
 <div class="center-marker">📍</div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 
-let map=L.map('map',{zoomControl:false})
-.setView([0,0],16);
+let map = L.map('map',{zoomControl:false})
+.setView([0,0],17);
 
 L.tileLayer(
 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 ).addTo(map);
 
-let lastHeading=0;
+let accuracyCircle;
+let lastLatLng=null;
 
-// ROTACIJA MAPE
-function rotateMap(deg){
-  lastHeading=deg;
-  document.getElementById("map")
-    .style.transform=`rotate(${-deg}deg)`;
+// jednostavno "smoothing" filtriranje
+function smoothPosition(newLat,newLng){
+  if(!lastLatLng) return [newLat,newLng];
+
+  let alpha=0.25; // manji = stabilnije
+  let lat=lastLatLng[0]*(1-alpha)+newLat*alpha;
+  let lng=lastLatLng[1]*(1-alpha)+newLng*alpha;
+
+  return [lat,lng];
 }
 
-// GPS PRAĆENJE
+if(navigator.geolocation){
+
 navigator.geolocation.watchPosition(pos=>{
 
 let lat=pos.coords.latitude;
 let lng=pos.coords.longitude;
+let acc=pos.coords.accuracy;
 
-map.setView([lat,lng],17,{animate:true});
+// ignoriraj loša očitanja
+if(acc>40) return;
 
-// heading iz GPS-a (najbolje kad voziš)
-if(pos.coords.heading!==null){
-  rotateMap(pos.coords.heading);
-}
+let smoothed=smoothPosition(lat,lng);
+lastLatLng=smoothed;
+
+// auto zoom prema brzini
+let speed=pos.coords.speed||0;
+let zoom= speed>20 ? 15 : 17;
+
+map.setView(smoothed,zoom,{animate:true});
+
+// krug tačnosti
+if(accuracyCircle) map.removeLayer(accuracyCircle);
+accuracyCircle=L.circle(smoothed,{
+radius:acc
+}).addTo(map);
 
 },{
- enableHighAccuracy:true,
- maximumAge:0,
- timeout:5000
-});
-
-
-// FALLBACK KOMPAS (telefon senzori)
-if(window.DeviceOrientationEvent){
-
-window.addEventListener("deviceorientationabsolute",e=>{
-  if(e.alpha!=null){
-    rotateMap(e.alpha);
-  }
-});
-
-window.addEventListener("deviceorientation",e=>{
-  if(e.alpha!=null){
-    rotateMap(e.alpha);
-  }
+enableHighAccuracy:true,
+maximumAge:0,
+timeout:8000
 });
 
 }
 
 </script>
-
 </body>
 </html>
