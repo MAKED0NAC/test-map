@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>DONAC</title>
+<title>Moja GTA mapa</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -35,12 +35,13 @@ navigator.geolocation.watchPosition(pos => {
     marker.setLatLng([lat, lng]);
   }
 
-  map.setView([lat, lng], 20);
+  // Koristi flyTo za glatko pomeranje kamere
+  map.flyTo([lat, lng], 20, {
+    animate: true,
+    duration: 1.5 // trajanje animacije u sekundama
+  });
 });
 </script>
 
 </body>
 </html>
-
-
-
