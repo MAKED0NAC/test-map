@@ -9,7 +9,7 @@
 
 <style>
 #map {
-  height: 60vh;
+  height: 100vh;
   background: black;
 }
 </style>
@@ -35,10 +35,11 @@ navigator.geolocation.watchPosition(pos => {
     marker.setLatLng([lat, lng]);
   }
 
-  map.setView([lat, lng], 16);
+  map.setView([lat, lng], 10);
 });
 </script>
 
 </body>
 </html>
+
 
